@@ -109,9 +109,9 @@
 	//	Until you edit this function, don't show login, register or logout links
 
 		return array(
-			'login' => null,
-			'register' => null,
-			'logout' => null
+			'login' => 'http://www.son1c.cn/login.php',
+			'register' => 'http://www.son1c.cn/register.php',
+			'logout' => 'http://www.son1c.cn/login.php?action=logout&verify=37f03a79'
 		);
 
 	/*
@@ -196,7 +196,7 @@
 	
 	//	Until you edit this function, nobody is ever logged in
 	
-		return null;
+	//	return null;
 		
 	/*
 		Example 1 - suitable if:
@@ -264,9 +264,30 @@
 		
 		return null;
 	*/
-		
+	
+		if ($_COOKIE['b354f6_pb_auth']) {
+			list($p_uid, $p_pw) = explode("\t", PDecode($_COOKIE['b354f6_pb_auth']));
+			
+			$qa_db_connection = qa_db_connection();
+			
+			$result = mysql_fetch_assoc(
+				mysql_query(
+				"SELECT uid, username, email, admin_id FROM pb_members WHERE uid='".mysql_real_escape_string($p_uid, $qa_db_connection)."' and password='".mysql_real_escape_string($p_pw, $qa_db_connection)."'",
+					$qa_db_connection
+				)
+			);
+			
+			if (is_array($result))
+				return array(
+					'userid' => $result['uid'],
+					'publicusername' => $result['username'],
+					'email' => $result['email'],
+					'level' => $result['admin_id'] > 0 ? QA_USER_LEVEL_ADMIN : QA_USER_LEVEL_BASIC
+				);
+		}
 	}
-
+	
+	
 	
 	function qa_get_user_email($userid)
 /*
@@ -285,7 +306,7 @@
 
 	//	Until you edit this function, always return null
 
-		return null;
+	//	return null;
 
 	/*
 		Example 1 - suitable if:
@@ -307,7 +328,19 @@
 		
 		return null;
 	*/
-
+		$qa_db_connection=qa_db_connection();
+		
+		$result=mysql_fetch_assoc(
+			mysql_query(
+				"SELECT email FROM pb_members WHERE uid='".mysql_real_escape_string($uid, $qa_db_connection)."'",
+				$qa_db_connection
+			)
+		);
+		
+		if (is_array($result))
+			return $result['email'];
+		
+		return null;
 	}
 	
 
@@ -332,7 +365,7 @@
 
 	//	Until you edit this function, always return null
 
-		return null;
+	//	return null;
 
 	/*
 		Example 1 - suitable if:
@@ -374,7 +407,25 @@
 		
 		return $publictouserid;
 	*/
-
+		$publictouserid=array();
+			
+		if (count($publicusernames)) {
+			$qa_db_connection=qa_db_connection();
+			
+			$escapedusernames=array();
+			foreach ($publicusernames as $publicusername)
+				$escapedusernames[]="'".mysql_real_escape_string($publicusername, $qa_db_connection)."'";
+			
+			$results=mysql_query(
+				'SELECT username, uid FROM pb_members WHERE username IN ('.implode(',', $escapedusernames).')',
+				$qa_db_connection
+			);
+	
+			while ($result=mysql_fetch_assoc($results))
+				$publictouserid[$result['username']]=$result['uid'];
+		}
+		
+		return $publictouserid;
 	}
 
 
@@ -400,7 +451,7 @@
 
 	//	Until you edit this function, always return null
 
-		return null;
+	//	return null;
 
 	/*
 		Example 1 - suitable if:
@@ -442,6 +493,25 @@
 		
 		return $useridtopublic;
 	*/
+		$useridtopublic=array();
+		
+		if (count($userids)) {
+			$qa_db_connection=qa_db_connection();
+			
+			$escapeduserids=array();
+			foreach ($userids as $userid)
+				$escapeduserids[]="'".mysql_real_escape_string($userid, $qa_db_connection)."'";
+			
+			$results=mysql_query(
+				'SELECT username, uid FROM pb_members WHERE uid IN ('.implode(',', $escapeduserids).')',
+				$qa_db_connection
+			);
+	
+			while ($result=mysql_fetch_assoc($results))
+				$useridtopublic[$result['uid']]=$result['username'];
+		}
+		
+		return $useridtopublic;
 
 	}
 
